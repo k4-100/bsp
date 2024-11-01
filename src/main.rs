@@ -41,25 +41,50 @@ impl Cell {
     // }
 }
 
+// struct Section {
+//     pub tl: (usize, usize),
+//     pub br: (usize, usize),
+// }
+
 pub fn split_rooms(mut data_map: &mut [[&str; X_LENGTH]; Y_LENGTH]) {
     let mut rng = rand::thread_rng();
-    let mut vertical_split: bool = rand::random();
+    let mut data_map_clone = data_map.clone();
 
-    if vertical_split {
+    if rand::random() {
         let x: usize = rng.gen_range(20..X_LENGTH - 20);
 
-        for i in 0..data_map.len() {
-            data_map[i][x] = "#";
+        // vertical
+        for i in 0..data_map_clone.len() {
+            // if data_map_clone[i][x] == "#" {
+            //     break;
+            // }
+
+            if data_map_clone[i][x] == "#" {
+                if rng.gen_range(0..9) > 3 {
+                    data_map_clone = data_map.clone();
+                } else {
+                    break;
+                }
+            }
+            data_map_clone[i][x] = "#";
         }
+    } else {
+        let y: usize = rng.gen_range(6..Y_LENGTH - 6);
 
-        return;
+        // horizontal
+        for i in 0..data_map_clone[y].len() {
+            if data_map_clone[y][i] == "#" {
+                if rng.gen_range(0..9) > 3 {
+                    data_map_clone = data_map.clone();
+                } else {
+                    break;
+                }
+            }
+            data_map_clone[y][i] = "#";
+        }
     }
 
-    let y: usize = rng.gen_range(6..Y_LENGTH - 6);
-
-    for i in 0..data_map[y].len() {
-        data_map[y][i] = "#";
-    }
+    *data_map = data_map_clone;
 }
 
 fn main() {
@@ -89,6 +114,6 @@ fn main() {
         println!("{}", displayed_map);
 
         i += 1;
-        thread::sleep(time::Duration::from_millis(1000));
+        thread::sleep(time::Duration::from_millis(500));
     }
 }
