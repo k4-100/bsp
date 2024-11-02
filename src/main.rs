@@ -52,35 +52,80 @@ pub fn split_rooms(mut data_map: &mut [[&str; X_LENGTH]; Y_LENGTH]) {
 
     if rand::random() {
         let x: usize = rng.gen_range(20..X_LENGTH - 20);
+        // check if split isn't to close to another
+        let mut passed_check = true;
+        let check_range = if x - 6 > 0 { x - 6 } else { 0 }..if x + 6 < X_LENGTH - 1 {
+            x + 6
+        } else {
+            X_LENGTH - 1
+        };
+
+        for i in check_range {
+            if data_map[0][i] == "#" {
+                passed_check = false;
+                break;
+            }
+        }
 
         // vertical
-        for i in 0..data_map_clone.len() {
-            // if data_map_clone[i][x] == "#" {
-            //     break;
-            // }
+        if passed_check {
+            let run_range = if rand::random() {
+                0..data_map_clone.len()
+            } else {
+                data_map_clone.len() - 1..0
+            };
 
-            if data_map_clone[i][x] == "#" {
-                if rng.gen_range(0..9) > 3 {
-                    data_map_clone = data_map.clone();
-                } else {
-                    break;
+            for i in run_range {
+                // if data_map_clone[i][x] == "#" {
+                //     break;
+                // }
+
+                if data_map_clone[i][x] == "#" {
+                    if rand::random() {
+                        data_map_clone = data_map.clone();
+                    } else {
+                        break;
+                    }
                 }
+                data_map_clone[i][x] = "#";
             }
-            data_map_clone[i][x] = "#";
         }
     } else {
         let y: usize = rng.gen_range(6..Y_LENGTH - 6);
 
-        // horizontal
-        for i in 0..data_map_clone[y].len() {
-            if data_map_clone[y][i] == "#" {
-                if rng.gen_range(0..9) > 3 {
-                    data_map_clone = data_map.clone();
-                } else {
-                    break;
-                }
+        // check if split isn't to close to another
+        let mut passed_check = true;
+        let check_range = if y - 3 > 0 { y - 3 } else { 0 }..if y + 3 < Y_LENGTH - 1 {
+            y + 3
+        } else {
+            Y_LENGTH - 1
+        };
+
+        for i in check_range {
+            if data_map[i][0] == "#" {
+                passed_check = false;
+                break;
             }
-            data_map_clone[y][i] = "#";
+        }
+
+        // horizontal
+
+        if passed_check {
+            let run_range = if rand::random() {
+                0..data_map_clone[y].len()
+            } else {
+                data_map_clone[y].len() - 1..0
+            };
+            for i in run_range {
+                if data_map_clone[y][i] == "#" {
+                    if rand::random() {
+                        data_map_clone = data_map.clone();
+                    } else {
+                        break;
+                    }
+                }
+                data_map_clone[y][i] = "#";
+            }
         }
     }
 
@@ -114,6 +159,6 @@ fn main() {
         println!("{}", displayed_map);
 
         i += 1;
-        thread::sleep(time::Duration::from_millis(500));
+        thread::sleep(time::Duration::from_millis(20));
     }
 }
