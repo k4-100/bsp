@@ -8,157 +8,126 @@ use rand::Rng;
 const X_LENGTH: usize = 120;
 const Y_LENGTH: usize = 40;
 
-#[derive(Debug)]
-struct Cell {
-    pub x: u8,
-    pub y: u8,
-}
-
-impl Cell {
-    pub fn new(x: u8, y: u8) -> Self {
-        Self { x, y }
-    }
-
-    pub fn to_map_key(&self) -> String {
-        let Self { x, y } = self;
-
-        format!("{x}-{y}")
-    }
-    // pub fn directly_to_map_key(x: u8, y: u8) -> String {
-    //     format!("{x}-{y}")
-    // }
-    //
-    // pub fn from_map_key(key: &str) -> Self {
-    //     let vals: Vec<u8> = key
-    //         .split("")
-    //         .map(|number| number.parse().unwrap())
-    //         .collect();
-    //
-    //     Self {
-    //         x: vals[0],
-    //         y: vals[1],
-    //     }
-    // }
-}
-
-// struct Section {
-//     pub tl: (usize, usize),
-//     pub br: (usize, usize),
+// fn calculate_sections(mut data_map: &mut [[&str; X_LENGTH]; Y_LENGTH]) -> Vec<Section> {
+//     let mut sections: Vec<Section> = Vec::new();
+//     let mut section_count = 0;
+//
+//     println!("section_count: {section_count}");
+//
+//     sections
 // }
 
-pub fn split_rooms(mut data_map: &mut [[&str; X_LENGTH]; Y_LENGTH]) {
-    let mut rng = rand::thread_rng();
-    let mut data_map_clone = data_map.clone();
+// pub fn split_rooms(mut data_map: &mut [[&str; X_LENGTH]; Y_LENGTH]) {
+//     let mut rng = rand::thread_rng();
+//     let mut data_map_clone = data_map.clone();
+//
+//     // let sections = calculate_sections(data_map);
+//
+//     if rand::random() {
+//         let x: usize = rng.gen_range(20..X_LENGTH - 20);
+//
+//         // vertical
+//         let run_range = 0..data_map_clone.len();
+//
+//         for i in run_range {
+//             data_map[i][x] = "#";
+//         }
+//     } else {
+//         let y: usize = rng.gen_range(6..Y_LENGTH - 6);
+//
+//         // horizontal
+//         let run_range = 0..data_map_clone[y].len();
+//         for i in run_range {
+//             data_map[y][i] = "#";
+//         }
+//     }
+// }
 
-    if rand::random() {
-        let x: usize = rng.gen_range(20..X_LENGTH - 20);
-        // check if split isn't to close to another
-        let mut passed_check = true;
-        let check_range = if x - 6 > 0 { x - 6 } else { 0 }..if x + 6 < X_LENGTH - 1 {
-            x + 6
-        } else {
-            X_LENGTH - 1
-        };
+struct Section {
+    pub tl: usize,
+    pub br: usize,
+}
 
-        for i in check_range {
-            if data_map[0][i] == "#" {
-                passed_check = false;
-                break;
-            }
-        }
+enum SplitVariant {
+    Horizontal,
+    Vertical,
+}
 
-        // vertical
-        if passed_check {
-            let run_range = if rand::random() {
-                0..data_map_clone.len()
-            } else {
-                data_map_clone.len() - 1..0
-            };
+// struct BTree {
+//     pub parent: Option<*mut BTree>,
+//     pub children: [Option<*mut BTree>; 2],
+//     pub data: Box<Section>,
+// }
 
-            for i in run_range {
-                // if data_map_clone[i][x] == "#" {
-                //     break;
-                // }
+// struct BTree {
+//     pub parent: Option<*mut BTree>,
+//     pub children: [Option<*mut BTree>; 2],
+//     pub data: Box<Section>,
+// }
 
-                if data_map_clone[i][x] == "#" {
-                    if rand::random() {
-                        data_map_clone = data_map.clone();
-                    } else {
-                        break;
-                    }
-                }
-                data_map_clone[i][x] = "#";
-            }
-        }
-    } else {
-        let y: usize = rng.gen_range(6..Y_LENGTH - 6);
+struct BTree {
+    // pub parent: Option<*mut BTree>,
+    pub children: [Option<Box<BTree>>; 2],
+    // pub data: Box<Section>,
+    pub data: Box<usize>,
+}
 
-        // check if split isn't to close to another
-        let mut passed_check = true;
-        let check_range = if y - 3 > 0 { y - 3 } else { 0 }..if y + 3 < Y_LENGTH - 1 {
-            y + 3
-        } else {
-            Y_LENGTH - 1
-        };
-
-        for i in check_range {
-            if data_map[i][0] == "#" {
-                passed_check = false;
-                break;
-            }
-        }
-
-        // horizontal
-
-        if passed_check {
-            let run_range = if rand::random() {
-                0..data_map_clone[y].len()
-            } else {
-                data_map_clone[y].len() - 1..0
-            };
-            for i in run_range {
-                if data_map_clone[y][i] == "#" {
-                    if rand::random() {
-                        data_map_clone = data_map.clone();
-                    } else {
-                        break;
-                    }
-                }
-                data_map_clone[y][i] = "#";
+impl BTree {
+    pub fn traverse(&self, this: &BTree, recursion_count: &mut usize) {
+        *recursion_count += 1;
+        println!("recursion_count: {recursion_count}");
+        for child_option in this.children.iter() {
+            if let Some(child) = child_option {
+                self.traverse(child, recursion_count);
+                continue;
             }
         }
     }
-
-    *data_map = data_map_clone;
 }
 
 fn main() {
-    println!("\n");
+    let mut btree: BTree = BTree {
+        // children: [None, None],
+        children: [
+            Some(Box::new(BTree {
+                children: [None, None],
+                data: Box::new(0),
+            })),
+            Some(Box::new(BTree {
+                children: [None, None],
+                data: Box::new(0),
+            })),
+        ],
+        data: Box::new(0),
+    };
+
+    let mut recursion_count = 0;
+    btree.traverse(&btree, &mut recursion_count);
 
     //setup
 
-    let mut data_map: [[&str; X_LENGTH]; Y_LENGTH] = [["."; X_LENGTH]; Y_LENGTH];
-    let mut i: usize = 0;
-
-    //main execution loop
-    loop {
-        split_rooms(&mut data_map);
-        let displayed_map: String = (0..Y_LENGTH)
-            .map(|y| {
-                let row: String = (0..X_LENGTH)
-                    .map(|x| {
-                        let block = data_map[y][x];
-                        block
-                    })
-                    .collect();
-                format!("{row}\n")
-            })
-            .collect();
-
-        println!("iteration {i}");
-        println!("{}", displayed_map);
-
-        i += 1;
-        thread::sleep(time::Duration::from_millis(20));
-    }
+    // let mut data_map: [[&str; X_LENGTH]; Y_LENGTH] = [["."; X_LENGTH]; Y_LENGTH];
+    // let mut i: usize = 0;
+    //
+    // //main execution loop
+    // loop {
+    //     // split_rooms(&mut data_map);
+    //     let displayed_map: String = (0..Y_LENGTH)
+    //         .map(|y| {
+    //             let row: String = (0..X_LENGTH)
+    //                 .map(|x| {
+    //                     let block = data_map[y][x];
+    //                     block
+    //                 })
+    //                 .collect();
+    //             format!("{row}\n")
+    //         })
+    //         .collect();
+    //
+    //     println!("iteration {i}");
+    //     println!("{}", displayed_map);
+    //
+    //     i += 1;
+    //     thread::sleep(time::Duration::from_millis(1000));
+    // }
 }
