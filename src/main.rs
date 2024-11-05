@@ -87,11 +87,19 @@ impl BTree {
         }
     }
 
-    pub fn new_with_children(section: Section, children: [BTree; 2]) -> Self {
+    pub fn new_with_children(section: Section, children: [Option<BTree>; 2]) -> Self {
         Self {
             children: [
-                Some(Box::new(children[0].clone())),
-                Some(Box::new(children[1].clone())), //
+                if let Some(children_unwrapped) = children[0].clone() {
+                    Some(Box::new(children_unwrapped))
+                } else {
+                    None
+                },
+                if let Some(children_unwrapped) = children[1].clone() {
+                    Some(Box::new(children_unwrapped))
+                } else {
+                    None
+                },
             ],
             data: Box::new(section),
         }
@@ -125,6 +133,11 @@ impl BTree {
                 child.reach_leaves(leaves);
             }
         }
+
+        // if there were no children, add tree node to leaves
+        if leaves.is_empty() {
+            leaves.push(Box::new(self.clone()));
+        }
     }
 }
 
@@ -132,23 +145,26 @@ fn main() {
     let mut recursion_count = 0;
     // let mut btree: BTree = BTree::new(0);
 
+    // let mut btree: BTree = BTree::new(Section::new((0, 0), (X_LENGTH, Y_LENGTH)));
+
     let mut btree: BTree = BTree::new_with_children(
         Section::new((0, 0), (X_LENGTH, Y_LENGTH)),
         [
-            BTree::new_with_children(
+            Some(BTree::new_with_children(
                 Section::new((1, 0), (X_LENGTH, Y_LENGTH)),
                 [
-                    BTree::new(Section::new((20, 0), (X_LENGTH, Y_LENGTH))),
-                    BTree::new(Section::new((30, 0), (X_LENGTH, Y_LENGTH))),
+                    // Some(BTree::new(Section::new((20, 0), (X_LENGTH, Y_LENGTH)))),
+                    None,
+                    Some(BTree::new(Section::new((30, 0), (X_LENGTH, Y_LENGTH)))),
                 ],
-            ),
-            BTree::new_with_children(
+            )),
+            Some(BTree::new_with_children(
                 Section::new((4, 0), (X_LENGTH, Y_LENGTH)),
                 [
-                    BTree::new(Section::new((5, 0), (X_LENGTH, Y_LENGTH))),
-                    BTree::new(Section::new((6, 0), (X_LENGTH, Y_LENGTH))),
+                    Some(BTree::new(Section::new((5, 0), (X_LENGTH, Y_LENGTH)))),
+                    None, // BTree::new(Section::new((6, 0), (X_LENGTH, Y_LENGTH))),
                 ],
-            ),
+            )),
         ],
     );
 
