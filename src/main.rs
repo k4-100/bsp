@@ -43,9 +43,16 @@ const Y_LENGTH: usize = 40;
 //     }
 // }
 
+#[derive(Clone, Copy, Debug)]
 struct Section {
     pub tl: (usize, usize),
     pub br: (usize, usize),
+}
+
+impl Section {
+    pub fn new(tl: (usize, usize), br: (usize, usize)) -> Self {
+        Self { tl, br }
+    }
 }
 
 enum SplitVariant {
@@ -69,24 +76,24 @@ struct BTree {
     // pub parent: Option<*mut BTree>,
     pub children: [Option<Box<BTree>>; 2],
     // pub data: Box<Section>,
-    pub data: Box<usize>,
+    pub data: Box<Section>,
 }
 
 impl BTree {
-    pub fn new(i: usize) -> Self {
+    pub fn new(section: Section) -> Self {
         Self {
             children: [None, None],
-            data: Box::new(i),
+            data: Box::new(section),
         }
     }
 
-    pub fn new_with_children(i: usize, children: [BTree; 2]) -> Self {
+    pub fn new_with_children(section: Section, children: [BTree; 2]) -> Self {
         Self {
             children: [
                 Some(Box::new(children[0].clone())),
                 Some(Box::new(children[1].clone())), //
             ],
-            data: Box::new(i),
+            data: Box::new(section),
         }
     }
 
@@ -126,10 +133,22 @@ fn main() {
     // let mut btree: BTree = BTree::new(0);
 
     let mut btree: BTree = BTree::new_with_children(
-        0,
+        Section::new((0, 0), (X_LENGTH, Y_LENGTH)),
         [
-            BTree::new_with_children(1, [BTree::new(2), BTree::new(3)]),
-            BTree::new_with_children(4, [BTree::new(5), BTree::new(6)]),
+            BTree::new_with_children(
+                Section::new((1, 0), (X_LENGTH, Y_LENGTH)),
+                [
+                    BTree::new(Section::new((20, 0), (X_LENGTH, Y_LENGTH))),
+                    BTree::new(Section::new((30, 0), (X_LENGTH, Y_LENGTH))),
+                ],
+            ),
+            BTree::new_with_children(
+                Section::new((4, 0), (X_LENGTH, Y_LENGTH)),
+                [
+                    BTree::new(Section::new((5, 0), (X_LENGTH, Y_LENGTH))),
+                    BTree::new(Section::new((6, 0), (X_LENGTH, Y_LENGTH))),
+                ],
+            ),
         ],
     );
 
