@@ -64,7 +64,7 @@ enum SplitVariant {
 //     pub children: [Option<*mut BTree>; 2],
 //     pub data: Box<Section>,
 // }
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 struct BTree {
     // pub parent: Option<*mut BTree>,
     pub children: [Option<Box<BTree>>; 2],
@@ -95,7 +95,7 @@ impl BTree {
         println!("recursion_count: {recursion_count}");
         for child_option in self.children.iter() {
             if let Some(child) = child_option {
-                child.traverse_with_stuff(recursion_count);
+                child.traverse(recursion_count);
             }
         }
     }
@@ -109,13 +109,10 @@ impl BTree {
     //     }
     // }
 
-    pub fn reach_leaves(&self, leaves: &mut Vec<Box<BTree>>) {
+    pub fn leaves(&self, items: &Vec<Box<BTree>>) {
         for child_option in self.children.iter() {
             if let Some(child) = child_option {
-                if child.children[0].is_none() && child.children[1].is_none() {
-                    leaves.push(child.clone());
-                }
-                child.reach_leaves(leaves);
+                // self.leaves()
             }
         }
     }
@@ -133,12 +130,7 @@ fn main() {
         ],
     );
 
-    // btree.traverse_with_stuff(&mut recursion_count);
-    let mut v_btree: Vec<Box<BTree>> = Vec::new();
-
-    btree.reach_leaves(&mut v_btree);
-
-    println!("{:#?}", v_btree);
+    btree.traverse_with_stuff(&mut recursion_count);
 
     //setup
 
