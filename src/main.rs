@@ -55,8 +55,8 @@ impl Section {
     }
 
     pub fn contains(&self, point: (usize, usize)) -> bool {
-        (point.0 >= self.tl.1 && point.0 <= self.br.1)
-            && (self.tl.0 <= point.1 && point.1 <= self.br.0)
+        (point.0 >= self.tl.1 && point.0 < self.br.1)
+            && (self.tl.0 <= point.1 && point.1 < self.br.0)
     }
 }
 
@@ -147,13 +147,13 @@ impl BTree {
 }
 
 fn main() {
-    let mut sections = BTree::new(Section::new((0, 0), (Y_LENGTH, X_LENGTH)));
+    let mut sections = BTree::new(Section::new((1, 1), (Y_LENGTH - 1, X_LENGTH - 1)));
     let mut leaves: Vec<Box<BTree>> = Vec::new();
 
     sections.reach_leaves(&mut leaves);
 
     let mut displayed_grid: Vec<Vec<&str>> = (0..Y_LENGTH)
-        .map(|_| (0..X_LENGTH).map(|_| "*").collect::<Vec<&str>>())
+        .map(|_| (0..X_LENGTH).map(|_| "#").collect::<Vec<&str>>())
         .collect();
 
     for y in 0..Y_LENGTH {
