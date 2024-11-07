@@ -53,6 +53,11 @@ impl Section {
     pub fn new(tl: (usize, usize), br: (usize, usize)) -> Self {
         Self { tl, br }
     }
+
+    pub fn contains(&self, point: (usize, usize)) -> bool {
+        (point.0 >= self.tl.1 && point.0 <= self.br.1)
+            && (self.tl.0 <= point.1 && point.1 <= self.br.0)
+    }
 }
 
 enum SplitVariant {
@@ -142,63 +147,82 @@ impl BTree {
 }
 
 fn main() {
-    let mut recursion_count = 0;
-    // let mut btree: BTree = BTree::new(0);
+    let mut sections = BTree::new(Section::new((0, 0), (Y_LENGTH, X_LENGTH)));
+    let mut leaves: Vec<Box<BTree>> = Vec::new();
 
-    // let mut btree: BTree = BTree::new(Section::new((0, 0), (X_LENGTH, Y_LENGTH)));
+    sections.reach_leaves(&mut leaves);
 
-    let mut btree: BTree = BTree::new_with_children(
-        Section::new((0, 0), (X_LENGTH, Y_LENGTH)),
-        [
-            Some(BTree::new_with_children(
-                Section::new((1, 0), (X_LENGTH, Y_LENGTH)),
-                [
-                    // Some(BTree::new(Section::new((20, 0), (X_LENGTH, Y_LENGTH)))),
-                    None,
-                    Some(BTree::new(Section::new((30, 0), (X_LENGTH, Y_LENGTH)))),
-                ],
-            )),
-            Some(BTree::new_with_children(
-                Section::new((4, 0), (X_LENGTH, Y_LENGTH)),
-                [
-                    Some(BTree::new(Section::new((5, 0), (X_LENGTH, Y_LENGTH)))),
-                    None, // BTree::new(Section::new((6, 0), (X_LENGTH, Y_LENGTH))),
-                ],
-            )),
-        ],
-    );
+    let mut displayed_grid: Vec<Vec<&str>> = (0..Y_LENGTH)
+        .map(|_| (0..X_LENGTH).map(|_| "*").collect::<Vec<&str>>())
+        .collect();
 
-    // btree.traverse_with_stuff(&mut recursion_count);
-    let mut v_btree: Vec<Box<BTree>> = Vec::new();
-
-    btree.reach_leaves(&mut v_btree);
-
-    println!("{:#?}", v_btree);
-
-    //setup
-
-    // let mut data_map: [[&str; X_LENGTH]; Y_LENGTH] = [["."; X_LENGTH]; Y_LENGTH];
-    // let mut i: usize = 0;
-    //
-    // //main execution loop
-    // loop {
-    //     // split_rooms(&mut data_map);
-    //     let displayed_map: String = (0..Y_LENGTH)
-    //         .map(|y| {
-    //             let row: String = (0..X_LENGTH)
-    //                 .map(|x| {
-    //                     let block = data_map[y][x];
-    //                     block
-    //                 })
-    //                 .collect();
-    //             format!("{row}\n")
-    //         })
-    //         .collect();
-    //
-    //     println!("iteration {i}");
-    //     println!("{}", displayed_map);
-    //
-    //     i += 1;
-    //     thread::sleep(time::Duration::from_millis(1000));
-    // }
+    for y in 0..Y_LENGTH {
+        for x in 0..X_LENGTH {
+            if leaves[0].data.contains((x, y)) {
+                displayed_grid[y][x] = ".";
+            }
+            print!("{}", displayed_grid[y][x]);
+        }
+        println!("");
+    }
 }
+
+// let mut recursion_count = 0;
+// let mut btree: BTree = BTree::new(0);
+
+// let mut btree: BTree = BTree::new(Section::new((0, 0), (X_LENGTH, Y_LENGTH)));
+
+// let mut btree: BTree = BTree::new_with_children(
+//     Section::new((0, 0), (X_LENGTH, Y_LENGTH)),
+//     [
+//         Some(BTree::new_with_children(
+//             Section::new((1, 0), (X_LENGTH, Y_LENGTH)),
+//             [
+//                 // Some(BTree::new(Section::new((20, 0), (X_LENGTH, Y_LENGTH)))),
+//                 None,
+//                 Some(BTree::new(Section::new((30, 0), (X_LENGTH, Y_LENGTH)))),
+//             ],
+//         )),
+//         Some(BTree::new_with_children(
+//             Section::new((4, 0), (X_LENGTH, Y_LENGTH)),
+//             [
+//                 Some(BTree::new(Section::new((5, 0), (X_LENGTH, Y_LENGTH)))),
+//                 None, // BTree::new(Section::new((6, 0), (X_LENGTH, Y_LENGTH))),
+//             ],
+//         )),
+//     ],
+// );
+//
+// // btree.traverse_with_stuff(&mut recursion_count);
+// let mut v_btree: Vec<Box<BTree>> = Vec::new();
+//
+// btree.reach_leaves(&mut v_btree);
+//
+// println!("{:#?}", v_btree);
+
+//setup
+
+// let mut data_map: [[&str; X_LENGTH]; Y_LENGTH] = [["."; X_LENGTH]; Y_LENGTH];
+// let mut i: usize = 0;
+//
+// //main execution loop
+// loop {
+//     // split_rooms(&mut data_map);
+//     let displayed_map: String = (0..Y_LENGTH)
+//         .map(|y| {
+//             let row: String = (0..X_LENGTH)
+//                 .map(|x| {
+//                     let block = data_map[y][x];
+//                     block
+//                 })
+//                 .collect();
+//             format!("{row}\n")
+//         })
+//         .collect();
+//
+//     println!("iteration {i}");
+//     println!("{}", displayed_map);
+//
+//     i += 1;
+//     thread::sleep(time::Duration::from_millis(1000));
+// }
