@@ -3,7 +3,7 @@ use std::{
     thread, time,
 };
 
-use rand::Rng;
+use rand::{random, Rng};
 
 const X_LENGTH: usize = 120;
 const Y_LENGTH: usize = 40;
@@ -12,7 +12,7 @@ const Y_LENGTH: usize = 40;
 //     let mut sections: Vec<Section> = Vec::new();
 //     let mut section_count = 0;
 //
-//     println!("section_count: {section_count}");
+//     prinltn!("section_count: {section_count}");
 //
 //     sections
 // }
@@ -45,18 +45,18 @@ const Y_LENGTH: usize = 40;
 
 #[derive(Clone, Copy, Debug)]
 struct Section {
-    pub tl: (usize, usize),
-    pub br: (usize, usize),
+    pub lt: (usize, usize),
+    pub rb: (usize, usize),
 }
 
 impl Section {
-    pub fn new(tl: (usize, usize), br: (usize, usize)) -> Self {
-        Self { tl, br }
+    pub fn new(lt: (usize, usize), rb: (usize, usize)) -> Self {
+        Self { lt, rb }
     }
 
     pub fn contains(&self, point: (usize, usize)) -> bool {
-        (point.0 >= self.tl.1 && point.0 < self.br.1)
-            && (self.tl.0 <= point.1 && point.1 < self.br.0)
+        (self.lt.0 <= point.0 && point.0 < self.rb.0)
+            && (self.lt.1 <= point.1 && point.1 < self.rb.1)
     }
 }
 
@@ -121,7 +121,7 @@ impl BTree {
     }
 
     // pub fn traverse(&self) {
-    //     println!("recursion_count: {recursion_count}");
+    //     prinltn!("recursion_count: {recursion_count}");
     //     for child_option in self.children.iter() {
     //         if let Some(child) = child_option {
     //             child.traverse();
@@ -144,22 +144,52 @@ impl BTree {
             leaves.push(Box::new(self.clone()));
         }
     }
+
+    pub fn split_leaves(&self) {
+        let mut leaves: Vec<Box<BTree>> = Vec::new();
+        self.reach_leaves(&mut leaves);
+
+        for mut leaf in leaves {
+            for i in 0..=1 {
+                if let Some(divided_leaf) = &mut leaf.children[i] {
+                    let Section { lt, rb } = *divided_leaf.data;
+                    let mut divide: usize = 0;
+                    let mut rng = rand::thread_rng();
+                    // horizontal split - pick some y point and split horizontally
+                    if random() {
+                        divide = rng.gen_range(lt.1..rb.1);
+
+                        divided_leaf.children = [
+                            None,
+                            // Some(Box::new(BTree::new(Section::new(lt, (divide - 1, rb.0))))),
+                            // Some(Box::new(BTree::new(Section::new((divide+1, lt.0), (divide - 1, rb.0))))),
+                            // Some(Box::new(BTree::new(Section(lt, (divide - 1, rb.0))))),
+                            None, // None,
+                                 // None
+                        ];
+                    }
+                }
+            }
+        }
+    }
 }
 
 fn main() {
-    let mut sections = BTree::new(Section::new((1, 1), (Y_LENGTH - 1, X_LENGTH - 1)));
+    let mut sections = BTree::new(Section::new((1, 1), (X_LENGTH - 1, Y_LENGTH - 1)));
     let mut leaves: Vec<Box<BTree>> = Vec::new();
 
     sections.reach_leaves(&mut leaves);
 
     let mut displayed_grid: Vec<Vec<&str>> = (0..Y_LENGTH)
-        .map(|_| (0..X_LENGTH).map(|_| "#").collect::<Vec<&str>>())
+        .map(|_| (0..X_LENGTH).map(|_| "*").collect::<Vec<&str>>())
         .collect();
 
     for y in 0..Y_LENGTH {
         for x in 0..X_LENGTH {
             if leaves[0].data.contains((x, y)) {
                 displayed_grid[y][x] = ".";
+            } else {
+                displayed_grid[y][x] = "#";
             }
             print!("{}", displayed_grid[y][x]);
         }
@@ -198,7 +228,7 @@ fn main() {
 //
 // btree.reach_leaves(&mut v_btree);
 //
-// println!("{:#?}", v_btree);
+// prinltn!("{:#?}", v_btree);
 
 //setup
 
@@ -220,8 +250,8 @@ fn main() {
 //         })
 //         .collect();
 //
-//     println!("iteration {i}");
-//     println!("{}", displayed_map);
+//     prinltn!("iteration {i}");
+//     prinltn!("{}", displayed_map);
 //
 //     i += 1;
 //     thread::sleep(time::Duration::from_millis(1000));
