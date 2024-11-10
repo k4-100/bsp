@@ -76,6 +76,7 @@ enum SplitVariant {
 //     pub children: [Option<*mut BTree>; 2],
 //     pub data: Box<Section>,
 // }
+
 #[derive(Clone, Debug)]
 struct BTree {
     // pub parent: Option<*mut BTree>,
@@ -129,10 +130,28 @@ impl BTree {
     //     }
     // }
 
-    pub fn reach_leaves(&self, mut leaves: Vec<Box<BTree>>) {
+    // pub fn reach_leaves(&self, leaves: &mut Vec<&Box<BTree>>) {
+    //     for child_option in self.children.iter() {
+    //         if let Some(child) = child_option {
+    //             if child.children[0].is_none() && child.children[1].is_none() {
+    //                 // leaves.push(child.clone());
+    //                 leaves.push(child);
+    //             }
+    //             child.reach_leaves(leaves);
+    //         }
+    //     }
+    //
+    //     // if there were no children, add tree node to leaves
+    //     if leaves.is_empty() {
+    //         leaves.push(Box::new(self.clone()));
+    //     }
+    // }
+
+    pub fn reach_leaves<'a>(&'a self, leaves: &mut Vec<&'a BTree>) {
         for child_option in self.children.iter() {
             if let Some(child) = child_option {
                 if child.children[0].is_none() && child.children[1].is_none() {
+                    // leaves.push(child.clone());
                     leaves.push(child);
                 }
                 child.reach_leaves(leaves);
@@ -141,19 +160,35 @@ impl BTree {
 
         // if there were no children, add tree node to leaves
         if leaves.is_empty() {
-            leaves.push(Box::new(self.clone()));
+            leaves.push(self);
         }
     }
 
+    // pub fn reach_leaves(&self, mut leaves: Vec<Box<BTree>>) {
+    //     for child_option in self.children.iter() {
+    //         if let Some(child) = child_option {
+    //             if child.children[0].is_none() && child.children[1].is_none() {
+    //                 leaves.push(child);
+    //             }
+    //             child.reach_leaves(leaves);
+    //         }
+    //     }
+    //
+    //     // if there were no children, add tree node to leaves
+    //     if leaves.is_empty() {
+    //         leaves.push(Box::new(self.clone()));
+    //     }
+    // }
+    //
     pub fn split_leaves(&self) {
-        let mut leaves: Vec<Box<BTree>> = Vec::new();
+        let mut leaves: Vec<&BTree> = Vec::new();
         self.reach_leaves(&mut leaves);
 
-        for mut leaf in &mut leaves {
+        for leaf in &mut leaves {
             for i in 0..=1 {
                 if let Some(mut divided_leaf) = leaf.children[i].clone() {
                     let Section { lt, rb } = *divided_leaf.data;
-                    let mut divide: usize = 0;
+                    let divide: usize;
                     let mut rng = rand::thread_rng();
                     // horizontal split - pick some y point and split horizontally
                     if random() {
@@ -175,8 +210,7 @@ impl BTree {
                             // None
                         ];
                     }
-
-                    leaf.children[i] = Some(divided_leaf);
+                    leaf.children[i] = Some(Box::new(*divided_leaf));
                 }
             }
         }
@@ -185,7 +219,7 @@ impl BTree {
 
 fn main() {
     let mut sections = BTree::new(Section::new((1, 1), (X_LENGTH - 1, Y_LENGTH - 1)));
-    let mut leaves: Vec<Box<BTree>> = Vec::new();
+    let mut leaves: Vec<&BTree> = Vec::new();
 
     sections.split_leaves();
 
