@@ -129,11 +129,11 @@ impl BTree {
     //     }
     // }
 
-    pub fn reach_leaves(&self, leaves: &mut Vec<Box<BTree>>) {
+    pub fn reach_leaves(&self, mut leaves: Vec<Box<BTree>>) {
         for child_option in self.children.iter() {
             if let Some(child) = child_option {
                 if child.children[0].is_none() && child.children[1].is_none() {
-                    leaves.push(child.clone());
+                    leaves.push(child);
                 }
                 child.reach_leaves(leaves);
             }
@@ -149,25 +149,34 @@ impl BTree {
         let mut leaves: Vec<Box<BTree>> = Vec::new();
         self.reach_leaves(&mut leaves);
 
-        for mut leaf in leaves {
+        for mut leaf in &mut leaves {
             for i in 0..=1 {
-                if let Some(divided_leaf) = &mut leaf.children[i] {
+                if let Some(mut divided_leaf) = leaf.children[i].clone() {
                     let Section { lt, rb } = *divided_leaf.data;
                     let mut divide: usize = 0;
                     let mut rng = rand::thread_rng();
                     // horizontal split - pick some y point and split horizontally
                     if random() {
-                        divide = rng.gen_range(lt.1..rb.1);
+                        divide = rng.gen_range(lt.1 + 2..rb.1 - 2);
 
                         divided_leaf.children = [
-                            None,
-                            // Some(Box::new(BTree::new(Section::new(lt, (divide - 1, rb.0))))),
+                            // None,
+                            Some(Box::new(BTree::new(Section::new(
+                                (lt.0, lt.1),
+                                (rb.0, divide - 1),
+                            )))),
+                            Some(Box::new(BTree::new(Section::new(
+                                (lt.0, divide + 1),
+                                (rb.0, rb.1),
+                            )))),
                             // Some(Box::new(BTree::new(Section::new((divide+1, lt.0), (divide - 1, rb.0))))),
                             // Some(Box::new(BTree::new(Section(lt, (divide - 1, rb.0))))),
-                            None, // None,
-                                 // None
+                            // None, // None,
+                            // None
                         ];
                     }
+
+                    leaf.children[i] = Some(divided_leaf);
                 }
             }
         }
@@ -178,7 +187,11 @@ fn main() {
     let mut sections = BTree::new(Section::new((1, 1), (X_LENGTH - 1, Y_LENGTH - 1)));
     let mut leaves: Vec<Box<BTree>> = Vec::new();
 
+    sections.split_leaves();
+
     sections.reach_leaves(&mut leaves);
+
+    println!("{:#?}", leaves);
 
     let mut displayed_grid: Vec<Vec<&str>> = (0..Y_LENGTH)
         .map(|_| (0..X_LENGTH).map(|_| "*").collect::<Vec<&str>>())
