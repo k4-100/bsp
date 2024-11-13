@@ -80,34 +80,38 @@ enum SplitVariant {
 #[derive(Clone, Debug)]
 struct BTree {
     // pub parent: Option<*mut BTree>,
-    pub children: [Option<Box<BTree>>; 2],
+    pub children: Vec<Option<BTree>>,
+    // pub left: Option<BTree>,
+    // pub right: Option<BTree>,
     // pub data: Box<Section>,
-    pub data: Box<Section>,
+    pub data: Section,
 }
 
 impl BTree {
-    pub fn new(section: Section) -> Self {
+    pub fn new(data: Section) -> Self {
         Self {
-            children: [None, None],
-            data: Box::new(section),
+            children: vec![],
+            data,
         }
     }
 
-    pub fn new_with_children(section: Section, children: [Option<BTree>; 2]) -> Self {
+    pub fn new_with_children(data: Section, children: [Option<BTree>; 2]) -> Self {
         Self {
-            children: [
-                if let Some(children_unwrapped) = children[0].clone() {
-                    Some(Box::new(children_unwrapped))
-                } else {
-                    None
-                },
-                if let Some(children_unwrapped) = children[1].clone() {
-                    Some(Box::new(children_unwrapped))
-                } else {
-                    None
-                },
-            ],
-            data: Box::new(section),
+            children: Box::new(children),
+            data,
+            // children: [
+            //     if let Some(children_unwrapped) = children[0].clone() {
+            //         Some(Box::new(children_unwrapped)
+            //     } else {
+            //         None
+            //     },
+            //     if let Some(children_unwrapped) = children[1].clone() {
+            //         Some(Box::new(children_unwrapped))
+            //     } else {
+            //         None
+            //     },
+            // ],
+            // data: Box::new(section),
         }
     }
 
@@ -150,7 +154,7 @@ impl BTree {
     pub fn reach_leaves<'a>(&'a self, leaves: &mut Vec<&'a BTree>) {
         for child_option in self.children.iter() {
             if let Some(child) = child_option {
-                if child.children[0].is_none() && child.children[1].is_none() {
+                if !child.children[0].is_none() && !child.children[1].is_none() {
                     // leaves.push(child.clone());
                     leaves.push(child);
                 }
@@ -163,6 +167,25 @@ impl BTree {
             leaves.push(self);
         }
     }
+
+    // pub fn reach_leaves<'a>(&'a mut self, leaves: &mut Vec<&mut BTree>) {
+    //     {
+    //         for child_option in self.children.iter_mut() {
+    //             if let Some(child) = child_option {
+    //                 if child.children[0].is_none() && child.children[1].is_none() {
+    //                     // leaves.push(child.clone());
+    //                     leaves.push(*child);
+    //                 }
+    //                 // child.reach_leaves(leaves);
+    //             }
+    //         }
+    //     }
+    //
+    //     // if there were no children, add tree node to leaves
+    //     if leaves.is_empty() {
+    //         // leaves.push(self);
+    //     }
+    // }
 
     // pub fn reach_leaves(&self, mut leaves: Vec<Box<BTree>>) {
     //     for child_option in self.children.iter() {
@@ -180,47 +203,38 @@ impl BTree {
     //     }
     // }
     //
-    pub fn split_leaves(&self) {
-        let mut leaves: Vec<&BTree> = Vec::new();
-        self.reach_leaves(&mut leaves);
-
-        for leaf in &mut leaves {
-            for i in 0..=1 {
-                if let Some(mut divided_leaf) = leaf.children[i].clone() {
-                    let Section { lt, rb } = *divided_leaf.data;
-                    let divide: usize;
-                    let mut rng = rand::thread_rng();
-                    // horizontal split - pick some y point and split horizontally
-                    if random() {
-                        divide = rng.gen_range(lt.1 + 2..rb.1 - 2);
-
-                        divided_leaf.children = [
-                            // None,
-                            Some(Box::new(BTree::new(Section::new(
-                                (lt.0, lt.1),
-                                (rb.0, divide - 1),
-                            )))),
-                            Some(Box::new(BTree::new(Section::new(
-                                (lt.0, divide + 1),
-                                (rb.0, rb.1),
-                            )))),
-                            // Some(Box::new(BTree::new(Section::new((divide+1, lt.0), (divide - 1, rb.0))))),
-                            // Some(Box::new(BTree::new(Section(lt, (divide - 1, rb.0))))),
-                            // None, // None,
-                            // None
-                        ];
-                    }
-                    leaf.children[i] = Some(Box::new(*divided_leaf));
-                }
-            }
-        }
-    }
-}
+//     pub fn split_leaves(&self) {
+//         let mut leaves: Vec<&BTree> = Vec::new();
+//         self.reach_leaves(&mut leaves);
+//         let mut mutable_leaves: Vec<BTree> = Vec::with_capacity(leaves.capacity());
+//
+//         for leaf in &mut leaves {
+//             let mut single_leaf = leaf.clone();
+//             for i in 0..=1 {
+//                 if let Some(mut divided_leaf) = single_leaf.children[i].clone() {
+//                     let Section { lt, rb } = divided_leaf.data;
+//                     let divide: usize;
+//                     let mut rng = rand::thread_rng();
+//                     // horizontal split - pick some y point and split horizontally
+//                     if random() {
+//                         divide = rng.gen_range(lt.1 + 2..rb.1 - 2);
+//
+//                         divided_leaf.children[0] =
+//                             Some(BTree::new(Section::new((lt.0, lt.1), (rb.0, divide - 1))));
+//                     }
+//                     single_leaf.children[i] = Some(divided_leaf);
+//                 }
+//             }
+//             mutable_leaves.push(single_leaf);
+//         }
+//     }
+// }
 
 fn main() {
     let mut sections = BTree::new(Section::new((1, 1), (X_LENGTH - 1, Y_LENGTH - 1)));
     let mut leaves: Vec<&BTree> = Vec::new();
 
+    sections.split_leaves();
     sections.split_leaves();
 
     sections.reach_leaves(&mut leaves);
