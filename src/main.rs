@@ -81,9 +81,6 @@ enum SplitVariant {
 struct BTree {
     // pub parent: Option<*mut BTree>,
     pub children: Vec<Option<BTree>>,
-    // pub left: Option<BTree>,
-    // pub right: Option<BTree>,
-    // pub data: Box<Section>,
     pub data: Section,
 }
 
@@ -138,11 +135,12 @@ impl BTree {
     //     }
     // }
 
-    pub fn reach_leaves<'a>(&'a self, leaves: &mut Vec<&Option<BTree>>) {
+    pub fn reach_leaves<'a>(&'a self, leaves: &mut Vec<&'a Option<BTree>>) {
         for child in self.children.iter() {
             if let Some(child_unwrapped) = child {
                 if child_unwrapped.children[0].is_none() && child_unwrapped.children[1].is_none() {
                     leaves.push(child);
+                    self.reach_leaves(leaves);
                 }
             }
         }
@@ -152,8 +150,6 @@ impl BTree {
         //     // leaves.push(Some(self));
         //     // leaves.push(Some(self));
         // }
-
-        return;
     }
 
     // pub fn reach_leaves<'a>(&'a self, leaves: &mut Vec<&'a BTree>) {
@@ -245,7 +241,7 @@ fn main() {
 
     sections.reach_leaves(&mut leaves);
 
-    println!("{:#?}", leaves);
+    println!("leaves:\n{:#?}", leaves);
 
     let mut displayed_grid: Vec<Vec<&str>> = (0..Y_LENGTH)
         .map(|_| (0..X_LENGTH).map(|_| "*").collect::<Vec<&str>>())
@@ -253,11 +249,19 @@ fn main() {
 
     for y in 0..Y_LENGTH {
         for x in 0..X_LENGTH {
-            if leaves[0].clone().unwrap().data.contains((x, y)) {
-                displayed_grid[y][x] = ".";
-            } else {
-                displayed_grid[y][x] = "#";
+            if leaves.len() != 0 {
+                for leave in leaves.iter() {
+                    if leave.clone().clone().unwrap().data.contains((x, y)) != true {
+                        // displayed_grid[y][x] = ".";
+                        displayed_grid[y][x] = "#";
+                    }
+                    // else {
+                    //     displayed_grid[y][x] = "#";
+                    // }
+                }
             }
+            // for leave in leaves.iter(){}
+
             print!("{}", displayed_grid[y][x]);
         }
         println!("");
