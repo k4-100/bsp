@@ -104,21 +104,11 @@ impl TreeNode {
         }
     }
 
-    pub fn new_with_children(
-        data: Section,
-        left: Option<TreeNode>,
-        right: Option<TreeNode>,
-    ) -> Self {
+    pub fn new_with_children(data: Section, left: Some(TreeNode), right: Some(TreeNode)) -> Self {
         Self {
             data,
-            left: match left {
-                Some(left) => Some(Rc::new(RefCell::new(left))),
-                None => None,
-            },
-            right: match right {
-                Some(right) => Some(Rc::new(RefCell::new(right))),
-                None => None,
-            },
+            left: Some(Rc::new(RefCell::new(left))),
+            right: Some(Rc::new(RefCell::new(right))),
         }
     }
 
@@ -282,21 +272,13 @@ impl TreeNode {
 }
 
 fn main() {
-    let mut tree = TreeNode::new_with_children(
+    let mut sections = TreeNode::new_with_children(
         Section::new((1, 1), (X_LENGTH - 1, Y_LENGTH - 1)),
-        None,
-        // Some(TreeNode::new(Section::new(
-        //     (2, 1),
-        //     (X_LENGTH - 1, Y_LENGTH - 1),
-        // ))),
-        Some(TreeNode::new(Section::new(
-            (3, 1),
-            (X_LENGTH - 1, Y_LENGTH - 1),
-        ))),
-        // None,
+        TreeNode::new(Section::new((1, 1), (X_LENGTH - 1, Y_LENGTH - 1))),
+        TreeNode::new(Section::new((1, 1), (X_LENGTH - 1, Y_LENGTH - 1))),
     );
     // let mut leaves: Vec<&Option<TreeNode>> = Vec::new();
-    let mut leaves = TreeNode::reach_leaves(Rc::new(RefCell::new(tree)));
+    let mut leaves = TreeNode::reach_leaves(Rc::new(RefCell::new(sections)));
 
     // sections.split_leaves();
     // sections.split_leaves();
