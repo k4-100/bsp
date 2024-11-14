@@ -1,5 +1,7 @@
 use std::{
+    cell::RefCell,
     collections::{BTreeMap, HashMap},
+    rc::Rc,
     thread, time,
 };
 
@@ -77,37 +79,74 @@ enum SplitVariant {
 //     pub data: Box<Section>,
 // }
 
-#[derive(Clone, Debug)]
-struct BTree {
-    // pub parent: Option<*mut BTree>,
-    pub children: Vec<Option<BTree>>,
-    pub data: Section,
+#[derive(Debug, Clone)]
+pub struct TreeNode {
+    data: Section,
+    left: Option<TreeNodeRef>,
+    right: Option<TreeNodeRef>,
 }
 
-impl BTree {
+type TreeNodeRef = Rc<RefCell<TreeNode>>;
+
+// #[derive(Clone, Debug)]
+// struct BTree {
+//     // pub parent: Option<*mut BTree>,
+//     pub children: Vec<Option<BTree>>,
+//     pub data: Section,
+// }
+
+impl TreeNode {
     pub fn new(data: Section) -> Self {
         Self {
-            children: vec![None, None],
             data,
+            left: None,
+            right: None,
         }
     }
 
-    pub fn new_with_children(data: Section, children: [Option<BTree>; 2]) -> Self {
+    pub fn new_with_children(data: Section, left: TreeNode, right: TreeNode) -> Self {
         Self {
-            children: vec![children[0].clone(), children[1].clone()],
             data,
+            left: Some(Rc::new(RefCell::new(left))),
+            right: Some(Rc::new(RefCell::new(right))),
         }
     }
 
-    pub fn traverse_with_stuff(&self, recursion_count: &mut usize) {
-        *recursion_count += 1;
-        println!("recursion_count: {recursion_count}");
-        for child_option in self.children.iter() {
-            if let Some(child) = child_option {
-                child.traverse_with_stuff(recursion_count);
+    pub fn reach_leaves(root: TreeNodeRef) -> Vec<TreeNodeRef> {
+        let mut stack = vec![root];
+        let mut leaves: Vec<TreeNodeRef> = Vec::new();
+
+        while !stack.is_empty() {
+            let mut has_children = true;
+            let current: TreeNodeRef = stack.pop().unwrap();
+
+            if let Some(left) = &current.borrow().left {
+                stack.push(left.to_owned());
+                has_children = false;
+            };
+
+            if let Some(right) = &current.borrow().right {
+                stack.push(right.to_owned());
+                has_children = false;
+            };
+
+            if has_children {
+                leaves.push(current);
             }
         }
+
+        leaves
     }
+
+    // pub fn traverse_with_stuff(&self, recursion_count: &mut usize) {
+    //     *recursion_count += 1;
+    //     println!("recursion_count: {recursion_count}");
+    //     for child_option in self.children.iter() {
+    //         if let Some(child) = child_option {
+    //             child.traverse_with_stuff(recursion_count);
+    //         }
+    //     }
+    // }
 
     // pub fn traverse(&self) {
     //     prinltn!("recursion_count: {recursion_count}");
@@ -135,22 +174,22 @@ impl BTree {
     //     }
     // }
 
-    pub fn reach_leaves<'a>(&'a self, leaves: &mut Vec<&'a Option<BTree>>) {
-        for child in self.children.iter() {
-            if let Some(child_unwrapped) = child {
-                if child_unwrapped.children[0].is_none() && child_unwrapped.children[1].is_none() {
-                    leaves.push(child);
-                    self.reach_leaves(leaves);
-                }
-            }
-        }
-
-        // if leaves.is_empty() {
-        //
-        //     // leaves.push(Some(self));
-        //     // leaves.push(Some(self));
-        // }
-    }
+    // pub fn reach_leaves<'a>(&'a self, leaves: &mut Vec<&'a Option<BTree>>) {
+    //     for child in self.children.iter() {
+    //         if let Some(child_unwrapped) = child {
+    //             if child_unwrapped.children[0].is_none() && child_unwrapped.children[1].is_none() {
+    //                 leaves.push(child);
+    //                 self.reach_leaves(leaves);
+    //             }
+    //         }
+    //     }
+    //
+    //     // if leaves.is_empty() {
+    //     //
+    //     //     // leaves.push(Some(self));
+    //     //     // leaves.push(Some(self));
+    //     // }
+    // }
 
     // pub fn reach_leaves<'a>(&'a self, leaves: &mut Vec<&'a BTree>) {
     //     for child_option in self.children.iter() {
@@ -233,25 +272,18 @@ impl BTree {
 }
 
 fn main() {
-    let mut sections = BTree::new_with_children(
+    let mut sections = TreeNode::new_with_children(
         Section::new((1, 1), (X_LENGTH - 1, Y_LENGTH - 1)),
-        [
-            Some(BTree::new(Section::new(
-                (1, 1),
-                (X_LENGTH - 1, Y_LENGTH - 1),
-            ))),
-            Some(BTree::new(Section::new(
-                (1, 1),
-                (X_LENGTH - 1, Y_LENGTH - 1),
-            ))),
-        ],
+        TreeNode::new(Section::new((1, 1), (X_LENGTH - 1, Y_LENGTH - 1))),
+        TreeNode::new(Section::new((1, 1), (X_LENGTH - 1, Y_LENGTH - 1))),
     );
-    let mut leaves: Vec<&Option<BTree>> = Vec::new();
+    // let mut leaves: Vec<&Option<TreeNode>> = Vec::new();
+    let mut leaves = TreeNode::reach_leaves(Rc::new(RefCell::new(sections)));
 
     // sections.split_leaves();
     // sections.split_leaves();
 
-    sections.reach_leaves(&mut leaves);
+    // sections.reach_leaves(&mut leaves);
 
     println!("leaves:\n{:#?}", leaves);
 
