@@ -233,7 +233,19 @@ impl BTree {
 }
 
 fn main() {
-    let mut sections = BTree::new(Section::new((1, 1), (X_LENGTH - 1, Y_LENGTH - 1)));
+    let mut sections = BTree::new_with_children(
+        Section::new((1, 1), (X_LENGTH - 1, Y_LENGTH - 1)),
+        [
+            Some(BTree::new(Section::new(
+                (1, 1),
+                (X_LENGTH - 1, Y_LENGTH - 1),
+            ))),
+            Some(BTree::new(Section::new(
+                (1, 1),
+                (X_LENGTH - 1, Y_LENGTH - 1),
+            ))),
+        ],
+    );
     let mut leaves: Vec<&Option<BTree>> = Vec::new();
 
     // sections.split_leaves();
@@ -247,25 +259,25 @@ fn main() {
         .map(|_| (0..X_LENGTH).map(|_| "*").collect::<Vec<&str>>())
         .collect();
 
-    for y in 0..Y_LENGTH {
-        for x in 0..X_LENGTH {
-            if leaves.len() != 0 {
-                for leave in leaves.iter() {
-                    if leave.clone().clone().unwrap().data.contains((x, y)) != true {
-                        // displayed_grid[y][x] = ".";
-                        displayed_grid[y][x] = "#";
-                    }
-                    // else {
-                    //     displayed_grid[y][x] = "#";
-                    // }
-                }
-            }
-            // for leave in leaves.iter(){}
-
-            print!("{}", displayed_grid[y][x]);
-        }
-        println!("");
-    }
+    // for y in 0..Y_LENGTH {
+    //     for x in 0..X_LENGTH {
+    //         if leaves.len() != 0 {
+    //             for leave in leaves.iter() {
+    //                 if leave.clone().clone().unwrap().data.contains((x, y)) != true {
+    //                     // displayed_grid[y][x] = ".";
+    //                     displayed_grid[y][x] = "#";
+    //                 }
+    //                 // else {
+    //                 //     displayed_grid[y][x] = "#";
+    //                 // }
+    //             }
+    //         }
+    //         // for leave in leaves.iter(){}
+    //
+    //         print!("{}", displayed_grid[y][x]);
+    //     }
+    //     println!("");
+    // }
 }
 
 // let mut recursion_count = 0;
