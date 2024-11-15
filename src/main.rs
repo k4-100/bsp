@@ -51,8 +51,10 @@ const Y_LENGTH: usize = 60;
 
 #[derive(Debug, Clone)]
 enum EntryVariant {
-    Horizontal,
-    Vertical,
+    Top,
+    Right,
+    Bottom,
+    Left,
 }
 
 #[derive(Clone, Debug)]
@@ -243,7 +245,7 @@ fn main() {
     let mut leaves = TreeNode::reach_leaves(tree_ref.clone());
     // TreeNode::split_leaf(leaves[0].clone());
 
-    for _ in 0..20 {
+    for _ in 0..10 {
         TreeNode::split_leaves(leaves.clone());
         leaves = TreeNode::reach_leaves(tree_ref.clone());
     }
