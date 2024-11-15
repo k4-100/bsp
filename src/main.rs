@@ -9,8 +9,8 @@ use std::{
 
 use rand::{random, Rng};
 
-const X_LENGTH: usize = 120;
-const Y_LENGTH: usize = 40;
+const X_LENGTH: usize = 140;
+const Y_LENGTH: usize = 60;
 
 // const X_LENGTH: usize = 10;
 // const Y_LENGTH: usize = 10;
@@ -49,26 +49,32 @@ const Y_LENGTH: usize = 40;
 //     }
 // }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Debug, Clone)]
+enum EntryVariant {
+    Horizontal,
+    Vertical,
+}
+
+#[derive(Clone, Debug)]
 struct Section {
     pub lt: (usize, usize),
     pub rb: (usize, usize),
+    entries: Vec<(usize, usize, EntryVariant)>,
 }
 
 impl Section {
     pub fn new(lt: (usize, usize), rb: (usize, usize)) -> Self {
-        Self { lt, rb }
+        Self {
+            lt,
+            rb,
+            entries: vec![],
+        }
     }
 
     pub fn contains(&self, point: (usize, usize)) -> bool {
         (self.lt.0 <= point.0 && point.0 < self.rb.0)
             && (self.lt.1 <= point.1 && point.1 < self.rb.1)
     }
-}
-
-enum SplitVariant {
-    Horizontal,
-    Vertical,
 }
 
 #[derive(Debug, Clone)]
@@ -169,11 +175,15 @@ impl TreeNode {
         let left_node: Option<TreeNode>;
         let right_node: Option<TreeNode>;
         let mut leaf_borrowed = leaf.borrow_mut();
-        let Section { lt, rb } = leaf_borrowed.data;
+        let lt = leaf_borrowed.data.lt;
+        let rb = leaf_borrowed.data.rb;
 
         // split with vertical line
         if rand::random() {
-            let x_range = lt.0 + 4..rb.0 - 4;
+            let x_range = lt.0 + 10..rb.0 - 10;
+            if x_range.is_empty() {
+                return;
+            }
             divide = rand::thread_rng().gen_range(x_range);
             left_node = Some(TreeNode::new(Section::new(
                 (lt.0, lt.1),
@@ -186,7 +196,11 @@ impl TreeNode {
         }
         // split with horizontal line
         else {
-            let y_range = lt.1 + 2..rb.1 - 2;
+            let y_range = lt.1 + 5..rb.1 - 5;
+
+            if y_range.is_empty() {
+                return;
+            }
             divide = rand::thread_rng().gen_range(y_range);
             left_node = Some(TreeNode::new(Section::new(
                 (lt.0, lt.1),
@@ -229,16 +243,11 @@ fn main() {
     let mut leaves = TreeNode::reach_leaves(tree_ref.clone());
     // TreeNode::split_leaf(leaves[0].clone());
 
-    for _ in 0..2 {
+    for _ in 0..20 {
         TreeNode::split_leaves(leaves.clone());
         leaves = TreeNode::reach_leaves(tree_ref.clone());
     }
-    // TreeNode::split_leaves(leaves);
-    // sections.split_leaves();
-
-    // sections.reach_leaves(&mut leaves);
-
-    println!("leaves:\n{:#?}", leaves);
+    println!("leaves:\n{:#?}", leaves.len());
 
     let mut displayed_grid: Vec<Vec<&str>> = (0..Y_LENGTH)
         .map(|_| (0..X_LENGTH).map(|_| "#").collect::<Vec<&str>>())
