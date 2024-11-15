@@ -1,8 +1,10 @@
 use std::{
+    // borrow::Borrow,
     cell::RefCell,
     collections::{BTreeMap, HashMap},
     rc::Rc,
-    thread, time,
+    thread,
+    time,
 };
 
 use rand::{random, Rng};
@@ -73,9 +75,14 @@ enum SplitVariant {
 pub struct TreeNode {
     data: Section,
     left: Option<TreeNodeRef>,
+    // left: Option<Rc<RefCell<TreeNode>>>,
     right: Option<TreeNodeRef>,
 }
 
+// impl Copy for TreeNode {}
+
+// #[derive(Clone, Copy)]
+//
 type TreeNodeRef = Rc<RefCell<TreeNode>>;
 
 impl TreeNode {
@@ -163,14 +170,25 @@ impl TreeNode {
         let Section { lt, rb } = leaf_borrowed.data;
 
         // split with vertical line
-        // if rand::random() {
-        let x_range = lt.0 + 4..rb.0 - 4;
-        divide = rand::thread_rng().gen_range(x_range);
-        let left_node = TreeNode::new(Section::new((lt.0, lt.1), (divide - 1, rb.1)));
-        let right_node = TreeNode::new(Section::new((divide + 1, lt.1), (rb.0, rb.1)));
+        if rand::random() {
+            let x_range = lt.0 + 4..rb.0 - 4;
+            divide = rand::thread_rng().gen_range(x_range);
+            let left_node = TreeNode::new(Section::new((lt.0, lt.1), (divide, rb.1)));
+            let right_node = TreeNode::new(Section::new((divide + 1, lt.1), (rb.0, rb.1)));
 
-        leaf_borrowed.left = Some(Rc::new(RefCell::new(left_node)));
-        leaf_borrowed.right = Some(Rc::new(RefCell::new(right_node)));
+            leaf_borrowed.left = Some(Rc::new(RefCell::new(left_node)));
+            leaf_borrowed.right = Some(Rc::new(RefCell::new(right_node)));
+        }
+        // split with horizontal line
+        else {
+            let y_range = lt.1 + 2..rb.1 - 2;
+            divide = rand::thread_rng().gen_range(y_range);
+            let left_node = TreeNode::new(Section::new((lt.0, lt.1), (rb.0, divide)));
+            let right_node = TreeNode::new(Section::new((lt.0, divide + 1), (rb.0, rb.1)));
+
+            leaf_borrowed.left = Some(Rc::new(RefCell::new(left_node)));
+            leaf_borrowed.right = Some(Rc::new(RefCell::new(right_node)));
+        }
     }
 
     // pub fn split_leaves(leaves: Vec<TreeNodeRef>) {
@@ -194,9 +212,11 @@ fn main() {
         //     (X_LENGTH - 1, Y_LENGTH - 1),
         // ))),
     );
+    let mut tree_ref = Rc::new(RefCell::new(tree));
     // let mut leaves: Vec<&Option<TreeNode>> = Vec::new();
-    let leaves = TreeNode::reach_leaves(Rc::new(RefCell::new(tree)));
+    let mut leaves = TreeNode::reach_leaves(tree_ref.clone());
     TreeNode::split_leaf(leaves[0].clone());
+    leaves = TreeNode::reach_leaves(tree_ref);
 
     // sections.split_leaves();
 
