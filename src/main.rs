@@ -245,7 +245,7 @@ fn main() {
     let mut leaves = TreeNode::reach_leaves(tree_ref.clone());
     // TreeNode::split_leaf(leaves[0].clone());
 
-    for _ in 0..10 {
+    for _ in 0..6 {
         TreeNode::split_leaves(leaves.clone());
         leaves = TreeNode::reach_leaves(tree_ref.clone());
     }
