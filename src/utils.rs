@@ -1,30 +1,26 @@
-use std::{
-    // borrow::Borrow,
-    cell::RefCell,
-    collections::{BTreeMap, HashMap},
-    rc::Rc,
-    thread,
-    time,
-};
+use std::{cell::RefCell, rc::Rc};
 
-use rand::{random, Rng};
+use rand::Rng;
 
-pub const X_LENGTH: usize = 140;
+pub const X_LENGTH: usize = 180;
 pub const Y_LENGTH: usize = 60;
 
-#[derive(Debug, Clone)]
+// #region Section
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum EntryVariant {
     Top,
     Right,
     Bottom,
     Left,
+    NotSet,
 }
 
 #[derive(Clone, Debug)]
 pub struct Section {
     pub lt: (usize, usize),
     pub rb: (usize, usize),
-    passages: Vec<(usize, usize, EntryVariant)>,
+    passages: Vec<EntryVariant>,
 }
 
 impl Section {
@@ -35,17 +31,71 @@ impl Section {
             passages: vec![],
         }
     }
-    pub fn new_with_random_passages(
-        lt: (usize, usize),
-        rb: (usize, usize),
-        passages: Vec<(usize, usize, EntryVariant)>,
-    ) -> Self {
+    pub fn new_with_random_passages(lt: (usize, usize), rb: (usize, usize)) -> Self {
+        let passages = vec![
+            EntryVariant::Top,    //    ( (lt.0 + rb.0/2), (lt.1) )
+            EntryVariant::Right,  //    ( (rb.0), (lt.1 + rb.1/2) )
+            EntryVariant::Bottom, //    ( (lt.0 + rb.0/2), (br.1) )
+            EntryVariant::Left,   //    ( (lt.0), (lt.1 + rb.1/2) )
+        ];
         Self { lt, rb, passages }
     }
 
     pub fn contains(&self, point: (usize, usize)) -> bool {
         (self.lt.0 <= point.0 && point.0 < self.rb.0)
             && (self.lt.1 <= point.1 && point.1 < self.rb.1)
+    }
+    pub fn check_if_is_passage(
+        &self,
+        point: (usize, usize),
+    ) -> Option<((usize, usize), EntryVariant)> {
+        let Section { lt, rb, passages } = self;
+
+        // println!("x: {:#?} y: {:#?}", lt.0 + rb.0 / 2, lt.1);
+        // println!("contains: {}", passages.contains(&EntryVariant::Top));
+        // if passages.contains(&EntryVariant::Top) && point == (lt.0 + (rb.0 / 2), lt.1) {
+        // if passages.contains(&EntryVariant::Top) &&
+        // for passage in self.passages.iter() {
+        //     match passage {
+        //         EntryVariant::Top => {
+        //             if point == (lt.0 + ((rb.0 - lt.0) / 2), lt.1) {
+        //                 return Some((point, EntryVariant::Top));
+        //             }
+        //         }
+        //         EntryVariant::Right => {
+        //             if point == ((rb.0) - 1, (lt.1 + rb.1 / 2)) {
+        //                 return Some((point, EntryVariant::Right));
+        //             }
+        //         }
+        //         EntryVariant::Bottom => {
+        //             if point == ((lt.0 + rb.0 / 2), rb.1 - 1) {
+        //                 return Some((point, EntryVariant::Bottom));
+        //             }
+        //         }
+        //         EntryVariant::Left => {
+        //             if point == ((lt.0), (lt.1 + rb.1 / 2)) {
+        //                 return Some((point, EntryVariant::Left));
+        //             }
+        //         }
+        //         _ => {}
+        //     }
+        // }
+
+        if point == (lt.0 + ((rb.0 - lt.0) / 2), lt.1) {
+            return Some((point, EntryVariant::Top));
+        }
+
+        if point == ((rb.0) - 1, (lt.1 + rb.1 / 2)) {
+            return Some((point, EntryVariant::Right));
+        }
+        if point == ((lt.0 + rb.0 / 2), rb.1 - 1) {
+            return Some((point, EntryVariant::Bottom));
+        }
+        if point == ((lt.0), (lt.1 + rb.1 / 2)) {
+            return Some((point, EntryVariant::Left));
+        }
+
+        None
     }
 }
 
@@ -57,10 +107,8 @@ pub struct TreeNode {
     pub right: Option<TreeNodeRef>,
 }
 
-// impl Copy for TreeNode {}
+//#endregion !Section
 
-// #[derive(Clone, Copy)]
-//
 type TreeNodeRef = Rc<RefCell<TreeNode>>;
 
 impl TreeNode {
@@ -131,11 +179,11 @@ impl TreeNode {
                 return;
             }
             divide = rand::thread_rng().gen_range(x_range);
-            left_node = Some(TreeNode::new(Section::new(
+            left_node = Some(TreeNode::new(Section::new_with_random_passages(
                 (lt.0, lt.1),
                 (divide + 0, rb.1),
             )));
-            right_node = Some(TreeNode::new(Section::new(
+            right_node = Some(TreeNode::new(Section::new_with_random_passages(
                 (divide + 1, lt.1),
                 (rb.0, rb.1),
             )));
@@ -148,11 +196,11 @@ impl TreeNode {
                 return;
             }
             divide = rand::thread_rng().gen_range(y_range);
-            left_node = Some(TreeNode::new(Section::new(
+            left_node = Some(TreeNode::new(Section::new_with_random_passages(
                 (lt.0, lt.1),
                 (rb.0, divide + 0),
             )));
-            right_node = Some(TreeNode::new(Section::new(
+            right_node = Some(TreeNode::new(Section::new_with_random_passages(
                 (lt.0, divide + 1),
                 (rb.0, rb.1),
             )));
@@ -168,4 +216,70 @@ impl TreeNode {
             TreeNode::split_leaf(leaf);
         }
     }
+}
+
+pub fn generate_map() -> Vec<Vec<&'static str>> {
+    let tree = TreeNode::new_with_children(
+        Section::new_with_random_passages((1, 1), (X_LENGTH - 1, Y_LENGTH - 1)),
+        None,
+        None,
+    );
+    let tree_ref = Rc::new(RefCell::new(tree));
+    let mut leaves = TreeNode::reach_leaves(tree_ref.clone());
+
+    for _ in 0..7 {
+        TreeNode::split_leaves(leaves.clone());
+        leaves = TreeNode::reach_leaves(tree_ref.clone());
+    }
+
+    let mut displayed_grid: Vec<Vec<&str>> = (0..Y_LENGTH)
+        .map(|_| (0..X_LENGTH).map(|_| "#").collect::<Vec<&str>>())
+        .collect();
+
+    let mut passages: Vec<((usize, usize), EntryVariant)> = Vec::new();
+
+    if !leaves.is_empty() {
+        for leaf in leaves.iter().rev() {
+            let leaf_unwrapped = &leaf.borrow();
+            // let Section { lt, rb, .. } = leaf_unwrapped.data;
+            // let fuck: (usize, usize) = (lt.0 + ((rb.0 - lt.0) / 2), lt.1);
+
+            // println!("TOP: {:?}", fuck);
+            // println!("lt: {:?} rb: {:?}", lt, rb);
+
+            for y in 0..Y_LENGTH {
+                for x in 0..X_LENGTH {
+                    if leaf_unwrapped.data.contains((x, y)) {
+                        displayed_grid[y][x] = ".";
+                    }
+
+                    // println!("x: {x} : y: {y}");
+                    if let Some(stored_passage) =
+                        passages.iter().find(|s_p| s_p.0 .0 == x && s_p.0 .1 == y)
+                    {
+                        match stored_passage.1 {
+                            EntryVariant::Top => displayed_grid[y - 1][x] = ".",
+                            EntryVariant::Left => displayed_grid[y][x - 1] = ".",
+                            EntryVariant::Bottom => displayed_grid[y + 1][x] = ".",
+                            EntryVariant::Right => displayed_grid[y][x + 1] = ".",
+                            _ => {}
+                        }
+                    } else if let Some(new_passage) =
+                        leaf_unwrapped.data.check_if_is_passage((x, y))
+                    {
+                        match new_passage.1 {
+                            EntryVariant::Top => displayed_grid[y - 1][x] = ".",
+                            EntryVariant::Left => displayed_grid[y][x - 1] = ".",
+                            EntryVariant::Bottom => displayed_grid[y + 1][x] = ".",
+                            EntryVariant::Right => displayed_grid[y][x + 1] = ".",
+                            _ => {}
+                        }
+                        passages.push(new_passage);
+                    }
+                }
+            }
+        }
+    }
+
+    displayed_grid
 }
